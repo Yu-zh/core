@@ -84,7 +84,7 @@ fn index_at_rev_(
 }
 
 ///|
-#deprecated("use str.view(start = str.index_of_nth_char(i).unwrap(), end = str.index_of_nth_char(j).unwrap()) to replace str[i:j]")
+#deprecated("use str.view(start_offset = str.offset_of_nth_char(i).unwrap(), end_offset = str.offset_of_nth_char(j).unwrap()) to replace str[i:j]")
 pub fn String::op_as_view(self : String, start~ : Int = 0, end? : Int) -> View {
   let str_len = self.length()
   let start = if start >= 0 {

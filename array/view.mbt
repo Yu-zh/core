@@ -238,7 +238,7 @@ pub fn[A] View::iter2(self : View[A]) -> Iter2[Int, A] {
 /// # Example
 /// ```mbt
 /// test {
-///   let sum = [1, 2, 3, 4, 5][:].fold(init=0, fn { sum, elem => sum + elem })
+///   let sum = [1, 2, 3, 4, 5][:].fold(init=0, (sum, elem) => sum + elem)
 ///   assert_eq(sum, 15)
 /// }
 /// ```
@@ -260,7 +260,7 @@ pub fn[A, B] View::fold(
 /// # Example
 /// ```mbt
 /// test {
-///   let sum = [1, 2, 3, 4, 5][:].rev_fold(init=0, fn { sum, elem => sum + elem })
+///   let sum = [1, 2, 3, 4, 5][:].rev_fold(init=0, (sum, elem) => sum + elem)
 ///   assert_eq(sum, 15)
 /// }
 /// ```
@@ -282,7 +282,7 @@ pub fn[A, B] View::rev_fold(
 /// # Example
 /// ```mbt
 /// test {
-///   let sum = [1, 2, 3, 4, 5][:].foldi(init=0, fn { index, sum, _elem => sum + index })
+///   let sum = [1, 2, 3, 4, 5][:].foldi(init=0, (index, sum, _elem) => sum + index)
 ///   assert_eq(sum, 10)
 /// }
 /// ```

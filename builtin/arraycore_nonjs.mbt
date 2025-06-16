@@ -132,7 +132,7 @@ fn[T] Array::buffer(self : Array[T]) -> UninitializedArray[T] {
 fn[T] Array::resize_buffer(self : Array[T], new_capacity : Int) -> Unit {
   let new_buf = UninitializedArray::make(new_capacity)
   let old_buf = self.buf
-  let old_cap = old_buf._.length()
+  let old_cap = old_buf.inner().length()
   let copy_len = if old_cap < new_capacity { old_cap } else { new_capacity }
   UninitializedArray::unsafe_blit(new_buf, 0, old_buf, 0, copy_len)
   self.buf = new_buf
@@ -183,7 +183,7 @@ test "Array::resize_buffer" {
   arr.push(1)
   arr.push(2)
   arr.resize_buffer(4)
-  assert_eq(arr.buffer()._.length() >= 4, true)
+  assert_eq(arr.buffer().inner().length() >= 4, true)
   arr.push(3)
   arr.push(4)
   assert_eq(arr.length(), 4)
@@ -256,7 +256,7 @@ pub fn[T] Array::shrink_to_fit(self : Array[T]) -> Unit {
 /// }
 /// ```
 pub fn[T] Array::push(self : Array[T], value : T) -> Unit {
-  if self.length() == self.buffer()._.length() {
+  if self.length() == self.buffer().inner().length() {
     self.realloc()
   }
   let length = self.length()
@@ -410,7 +410,7 @@ pub fn[T] Array::insert(self : Array[T], index : Int, value : T) -> Unit {
       "index out of bounds: the len is from 0 to \{self.length()} but the index is \{index}",
     )
   }
-  if self.length() == self.buffer()._.length() {
+  if self.length() == self.buffer().inner().length() {
     self.realloc()
   }
   UninitializedArray::unsafe_blit(

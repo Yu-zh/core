@@ -17,10 +17,8 @@
 ///
 /// # Example
 /// ```mbt
-/// test "Tuple::pair" {
 ///   let tuple = @tuple.pair(1, 2)
 ///   assert_eq(tuple, (1, 2))
-/// }
 /// ```
 #deprecated
 #coverage.skip
@@ -33,11 +31,9 @@ pub fn[T, U] pair(x : T, y : U) -> (T, U) {
 ///
 /// # Example
 /// ```mbt
-/// test "Tuple::fst" {
 ///   let tuple = (1, 2)
 ///   let x = @tuple.fst(tuple)
 ///   assert_eq(x, 1)
-/// }
 /// ```
 #deprecated("use `tuple.0` instead")
 #coverage.skip
@@ -50,11 +46,9 @@ pub fn[T, U] fst(tuple : (T, U)) -> T {
 ///
 /// # Example
 /// ```mbt
-/// test "Tuple::snd" {
 ///   let tuple = (1, 2)
 ///   let y = @tuple.snd(tuple)
 ///   assert_eq(y, 2)
-/// }
 /// ```
 #deprecated("use `tuple.1` instead")
 #coverage.skip
@@ -92,11 +86,9 @@ pub fn[T, U, V, W] map_both(
 ///
 /// # Example
 /// ```mbt
-/// test "Tuple::swap" {
 ///   let tuple = (1, 2)
 ///   let swapped = @tuple.swap(tuple)
 ///   assert_eq(swapped, (2, 1))
-/// }
 /// ```
 #deprecated
 #coverage.skip
@@ -109,11 +101,9 @@ pub fn[T, U] swap(tuple : (T, U)) -> (U, T) {
 ///
 /// # Example
 /// ```mbt
-/// test "Tuple::curry" {
 ///   let add = fn(x : Int, y : Int) -> Int { x + y }
 ///   let curried_add = @tuple.curry(add)
 ///   assert_eq(curried_add(1)(2), 3)
-/// }
 /// ```
 #deprecated
 #coverage.skip
@@ -126,11 +116,9 @@ pub fn[T, U, V] curry(f : (T, U) -> V) -> (T) -> (U) -> V {
 ///
 /// # Example
 /// ```mbt
-/// test "Tuple::uncurry" {
 ///   let add = fn(x : Int) -> (Int) -> Int { fn(y : Int) -> Int { x + y } }
 ///   let uncurried_add = @tuple.uncurry(add)
 ///   assert_eq(uncurried_add(1, 2), 3)
-/// }
 /// ```
 #deprecated
 #coverage.skip

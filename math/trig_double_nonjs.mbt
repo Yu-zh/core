@@ -34,7 +34,11 @@
 /// inspect(@math.sin(@double.infinity), content="NaN")
 /// inspect(@math.sin(@double.neg_infinity), content="NaN")
 /// ```
-pub fn sin(x : Double) -> Double {
+pub fnalias sin_ as sin
+
+///|
+#cfg(not(target="native"))
+fn sin_(x : Double) -> Double {
   if x.is_inf() || x.is_nan() {
     return @double.not_a_number
   }
@@ -52,6 +56,10 @@ pub fn sin(x : Double) -> Double {
     }
   }
 }
+
+///|
+#cfg(target="native")
+extern "C" fn sin_(x : Double) -> Double = "sin"
 
 ///|
 /// Calculates the cosine of a number in radians. Handles special cases and edge
@@ -75,7 +83,11 @@ pub fn sin(x : Double) -> Double {
 /// inspect(@math.cos(@double.infinity), content="NaN")
 /// inspect(@math.cos(@double.neg_infinity), content="NaN")
 /// ```
-pub fn cos(x : Double) -> Double {
+pub fnalias cos_ as cos
+
+///|
+#cfg(not(target="native"))
+fn cos_(x : Double) -> Double {
   if x.is_inf() || x.is_nan() {
     return @double.not_a_number
   }
@@ -93,6 +105,10 @@ pub fn cos(x : Double) -> Double {
     }
   }
 }
+
+///|
+#cfg(target="native")
+extern "C" fn cos_(x : Double) -> Double = "cos"
 
 ///|
 /// Calculates the tangent of a number in radians. Handles special cases and edge
@@ -116,7 +132,11 @@ pub fn cos(x : Double) -> Double {
 /// inspect(@math.tan(@double.infinity), content="NaN")
 /// inspect(@math.tan(@double.neg_infinity), content="NaN")
 /// ```
-pub fn tan(x : Double) -> Double {
+pub fnalias tan_ as tan
+
+///|
+#cfg(not(target="native"))
+fn tan_(x : Double) -> Double {
   if x.is_inf() || x.is_nan() {
     return @double.not_a_number
   }
@@ -129,6 +149,10 @@ pub fn tan(x : Double) -> Double {
     __kernal_tan(y[0], y[1], 1 - ((n & 1) << 1))
   }
 }
+
+///|
+#cfg(target="native")
+extern "C" fn tan_(x : Double) -> Double = "tan"
 
 ///|
 /// Calculates the arcsine of a number. Handles special cases and edge conditions
@@ -153,7 +177,11 @@ pub fn tan(x : Double) -> Double {
 /// inspect(@math.asin(@double.infinity), content="NaN")
 /// inspect(@math.asin(@double.neg_infinity), content="NaN")
 /// ```
-pub fn asin(x : Double) -> Double {
+pub fnalias asin_ as asin
+
+///|
+#cfg(not(target="native"))
+fn asin_(x : Double) -> Double {
   let huge = 1.0e+300
   let pio4_hi = 7.85398163397448278999e-01
   let pio2_hi = 1.57079632679489655800
@@ -212,6 +240,10 @@ pub fn asin(x : Double) -> Double {
 }
 
 ///|
+#cfg(target="native")
+extern "C" fn asin_(x : Double) -> Double = "asin"
+
+///|
 /// Calculates the arccosine of a number.
 ///
 /// Parameters:
@@ -233,7 +265,11 @@ pub fn asin(x : Double) -> Double {
 /// inspect(@math.acos(@double.infinity), content="NaN")
 /// inspect(@math.acos(@double.neg_infinity), content="NaN")
 /// ```
-pub fn acos(x : Double) -> Double {
+pub fnalias acos_ as acos
+
+///|
+#cfg(not(target="native"))
+fn acos_(x : Double) -> Double {
   let one : Double = 1.0
   let pi : Double = 3.14159265358979311600
   let pio2_hi : Double = 1.57079632679489655800
@@ -291,6 +327,10 @@ pub fn acos(x : Double) -> Double {
 }
 
 ///|
+#cfg(target="native")
+extern "C" fn acos_(x : Double) -> Double = "acos"
+
+///|
 /// Calculates the arctangent of a number.
 ///
 /// Parameters:
@@ -311,7 +351,11 @@ pub fn acos(x : Double) -> Double {
 /// inspect(@math.atan(@double.infinity), content="1.5707963267948966")
 /// inspect(@math.atan(@double.neg_infinity), content="-1.5707963267948966")
 /// ```
-pub fn atan(x : Double) -> Double {
+pub fnalias atan_ as atan
+
+///|
+#cfg(not(target="native"))
+fn atan_(x : Double) -> Double {
   if x.is_nan() || x == 0.0 {
     return x
   }
@@ -419,7 +463,11 @@ pub fn atan(x : Double) -> Double {
 /// inspect(@math.atan2(@double.infinity, @double.neg_infinity), content="2.356194490192345")
 /// inspect(@math.atan2(@double.neg_infinity, @double.infinity), content="-0.7853981633974483")
 /// ```
-pub fn atan2(y : Double, x : Double) -> Double {
+pub fnalias atan2_ as atan2
+
+///|
+#cfg(not(target="native"))
+fn atan2_(y : Double, x : Double) -> Double {
   if x.is_nan() || y.is_nan() {
     return @double.not_a_number
   }
@@ -482,6 +530,10 @@ pub fn atan2(y : Double, x : Double) -> Double {
     _ => z - pi_lo - pi
   }
 }
+
+///|
+#cfg(target="native")
+extern "C" fn atan2_(y : Double, x : Double) -> Double = "atan2"
 
 ///|
 fn rem_pio2(x : Double, y : Array[Double]) -> Int {

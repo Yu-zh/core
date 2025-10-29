@@ -216,6 +216,7 @@ fn radix_count32(value : UInt, radix : Int) -> Int {
 /// inspect((255).to_string(radix=16), content="ff")
 /// inspect((-255).to_string(radix=16), content="-ff")
 /// ```
+#cfg(not(target="js"))
 pub fn Int::to_string(self : Int, radix? : Int = 10) -> String {
   // Validate radix
   if radix < 2 || radix > 36 {
@@ -275,6 +276,19 @@ pub fn Int::to_string(self : Int, radix? : Int = 10) -> String {
 
 ///|
 fn unsafe_fixedarray_to_string(buffer : FixedArray[UInt16]) -> String = "%identity"
+
+///|
+/// Converts an integer to its string representation in the specified radix (base).
+#cfg(target="js")
+pub fn Int::to_string(self : Int, radix? : Int = 10) -> String {
+  int_to_string_js(self, radix)
+}
+
+///|
+extern "js" fn int_to_string_js(i : Int, radix : Int) -> String =
+  #|(x, radix) => {
+  #|  return x.toString(radix);
+  #|}
 
 ///|
 pub impl Show for Int with to_string(self) {

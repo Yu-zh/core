@@ -122,40 +122,53 @@ fn[T : Compare] timsort(arr : MutArrayView[T]) -> Unit {
       invariant: all_runs_sorted(arr, runs),
       invariant: runs_cover_prefix(runs, end),
       invariant: timsort_stack_invariant(runs),
-      reasoning: #|INNER LOOP: Merges adjacent runs to restore timsort stack invariants.
+      reasoning: #|[LOOP_ID: timsort_inner]
         #|
-        #|Why all_runs_sorted holds:
-        #|  - Before: runs[r] and runs[r+1] are both sorted (by outer loop invariant)
-        #|  - The merge operation combines two sorted sequences into one sorted sequence
-        #|  - After: runs[r+1] contains the merged sorted run, runs[r] is removed
-        #|  - All other runs are untouched and remain sorted
+        #|[INVARIANT: all_runs_sorted(arr, runs)]
+        #|  GIVEN: Before iteration, all_runs_sorted(arr, runs) holds.
+        #|  GIVEN: runs[r] and runs[r+1] are sorted (from invariant).
+        #|  GIVEN: merge(sorted_left, sorted_right) produces sorted output.
+        #|  STEP: merge() is called on arr.slice(left.start, right.start + right.len).
+        #|  STEP: runs[r+1] := merged run; runs[r] is removed.
+        #|  DEDUCE: The merged run is sorted (merge postcondition).
+        #|  DEDUCE: Other runs unchanged, remain sorted.
+        #|  CONCLUDE: all_runs_sorted(arr, runs) holds after iteration.
         #|
-        #|Why runs_cover_prefix holds:
-        #|  - Before: runs partition arr[0..end] with runs[r] covering [left.start, left.start+left.len)
-        #|    and runs[r+1] covering [right.start, right.start+right.len)
-        #|  - Since runs are contiguous: right.start == left.start + left.len
-        #|  - After merge: new run covers [left.start, left.start+left.len+right.len)
-        #|    which is exactly the union of the two original runs
-        #|  - Total coverage unchanged, just two adjacent runs become one
+        #|[INVARIANT: runs_cover_prefix(runs, end)]
+        #|  GIVEN: Before iteration, runs_cover_prefix(runs, end) holds.
+        #|  GIVEN: runs[r].start + runs[r].len == runs[r+1].start (contiguity).
+        #|  LET: left_start = runs[r].start, left_len = runs[r].len.
+        #|  LET: right_start = runs[r+1].start, right_len = runs[r+1].len.
+        #|  STEP: New run has start = left_start, len = left_len + right_len.
+        #|  DEDUCE: New run covers [left_start, left_start + left_len + right_len).
+        #|  DEDUCE: This equals [left_start, right_start + right_len) = union of both runs.
+        #|  CONCLUDE: Total coverage unchanged; runs_cover_prefix(runs, end) holds.
         #|
-        #|Why timsort_stack_invariant holds (on loop exit):
-        #|  - The collapse function returns Some(r) when stack invariants are violated
-        #|  - It checks: runs[n-2].len <= runs[n-1].len (violates invariant 1)
-        #|           or: runs[n-3].len <= runs[n-2].len + runs[n-1].len (violates invariant 2)
-        #|           or: runs[n-4].len <= runs[n-3].len + runs[n-2].len (violates invariant 2)
-        #|  - When collapse returns None, no violations exist, so invariant holds
-        #|  - The merge at position r increases runs[r+1].len (now merged run)
-        #|  - This may restore or maintain the invariant depending on relative sizes
-        #|  - Loop continues until all violations are resolved
+        #|[INVARIANT: timsort_stack_invariant(runs)]
+        #|  GIVEN: Loop exits when collapse(runs, len) returns None.
+        #|  GIVEN: collapse returns None IFF:
+        #|    (a) n < 2, OR
+        #|    (b) runs[n-2].len > runs[n-1].len AND
+        #|        (n < 3 OR runs[n-3].len > runs[n-2].len + runs[n-1].len) AND
+        #|        (n < 4 OR runs[n-4].len > runs[n-3].len + runs[n-2].len) AND
+        #|        NOT (runs[n-1].start + runs[n-1].len == len).
+        #|  DEDUCE: On exit, timsort_stack_invariant conditions are satisfied.
+        #|  CONCLUDE: timsort_stack_invariant(runs) holds on loop exit.
         #|
-        #|Why this invariant ensures O(n log n):
-        #|  - Invariant 2 implies run lengths grow at least as fast as Fibonacci numbers
-        #|  - Fibonacci numbers grow exponentially: F(k) >= phi^(k-2) where phi = (1+sqrt(5))/2
-        #|  - Therefore stack depth is O(log_phi(n)) = O(log n)
-        #|  - Each element participates in O(log n) merges, giving O(n log n) total work
+        #|[COMPLEXITY: O(n log n)]
+        #|  GIVEN: timsort_stack_invariant requires runs[i-2].len > runs[i-1].len + runs[i].len.
+        #|  DEDUCE: Run lengths grow at least as fast as Fibonacci: L[k] >= F[k].
+        #|  GIVEN: Fibonacci grows exponentially: F[k] >= phi^(k-2), phi = (1+sqrt(5))/2.
+        #|  DEDUCE: Stack depth is O(log_phi(n)) = O(log n).
+        #|  DEDUCE: Each element participates in O(log n) merges.
+        #|  CONCLUDE: Total merge work is O(n log n).
         #|
-        #|Termination: Each iteration reduces runs.length() by 1. The collapse function
-        #|returns None when stack invariants are satisfied, causing the loop to break.
+        #|[TERMINATION]
+        #|  MEASURE: runs.length()
+        #|  STEP: Each iteration removes one run (runs.remove(r)).
+        #|  DEDUCE: runs.length() decreases by 1 each iteration.
+        #|  DEDUCE: runs.length() >= 0 always.
+        #|  CONCLUDE: Loop terminates.
         ,
     }
   } where {
@@ -165,51 +178,75 @@ fn[T : Compare] timsort(arr : MutArrayView[T]) -> Unit {
     invariant: all_runs_sorted(arr, runs),
     invariant: runs_cover_prefix(runs, start),
     invariant: timsort_stack_invariant(runs),
-    reasoning: #|OUTER LOOP: Discovers natural runs and maintains sorted run stack.
+    reasoning: #|[LOOP_ID: timsort_outer]
       #|
-      #|Initialization (before first iteration):
-      #|  - start = 0, end = 0, runs = []
-      #|  - All invariants trivially hold: bounds are valid, start == end,
-      #|    no runs exist, runs_cover_prefix([], 0) is true, and
-      #|    timsort_stack_invariant([]) is vacuously true
+      #|[INITIALIZATION]
+      #|  STATE: start = 0, end = 0, runs = [].
+      #|  CHECK: 0 <= 0 && 0 <= len. TRUE (len >= 0).
+      #|  CHECK: start == end. TRUE (0 == 0).
+      #|  CHECK: all_runs_sorted(arr, []). TRUE (vacuously).
+      #|  CHECK: runs_cover_prefix([], 0). TRUE (empty runs cover empty prefix).
+      #|  CHECK: timsort_stack_invariant([]). TRUE (vacuously).
+      #|  CONCLUDE: All invariants hold at initialization.
       #|
-      #|Why bounds invariants hold:
-      #|  - start and end only increase, starting from 0
-      #|  - end is bounded by len (find_streak and provide_sorted_batch respect array bounds)
-      #|  - start = end at the end of each iteration body
+      #|[INVARIANT: 0 <= start && start <= len]
+      #|  GIVEN: Before iteration, 0 <= start && start <= len.
+      #|  GIVEN: start == end (from invariant).
+      #|  STEP: end increases via find_streak (returns >= 1 for non-empty slice).
+      #|  STEP: end may increase via provide_sorted_batch (bounded by len).
+      #|  STEP: start := end.
+      #|  DEDUCE: start' = end' where 0 <= end' <= len.
+      #|  CONCLUDE: 0 <= start && start <= len holds after iteration.
       #|
-      #|Why start == end holds (at loop entry):
-      #|  - Initially both are 0
-      #|  - At end of loop body: start = end (explicit assignment)
+      #|[INVARIANT: start == end]
+      #|  GIVEN: start := end is the last assignment before loop continues.
+      #|  CONCLUDE: start == end holds at next iteration entry.
       #|
-      #|Why all_runs_sorted holds:
-      #|  - find_streak finds a monotonic sequence (increasing or strictly decreasing)
-      #|  - If decreasing (was_reversed), we reverse it to make it increasing
-      #|  - provide_sorted_batch extends and sorts using insertion_sort if needed
-      #|  - The new run pushed is therefore sorted
-      #|  - Inner loop preserves sortedness via merge (which preserves sorted property)
+      #|[INVARIANT: all_runs_sorted(arr, runs)]
+      #|  GIVEN: Before iteration, all_runs_sorted(arr, runs) holds.
+      #|  STEP: find_streak returns (streak_end, was_reversed).
+      #|  GIVEN: find_streak postcondition:
+      #|    IF was_reversed THEN arr[start..start+streak_end] is strictly decreasing
+      #|    ELSE arr[start..start+streak_end] is non-decreasing.
+      #|  STEP: IF was_reversed THEN rev_in_place(arr[start..end]).
+      #|  DEDUCE: After potential reversal, arr[start..end] is non-decreasing.
+      #|  STEP: provide_sorted_batch may extend and sort via insertion_sort.
+      #|  GIVEN: insertion_sort postcondition: output is sorted.
+      #|  DEDUCE: arr[start..end'] is sorted after provide_sorted_batch.
+      #|  STEP: runs.push({ start, len: end - start }).
+      #|  DEDUCE: New run covers arr[start..end] which is sorted.
+      #|  STEP: Inner loop preserves all_runs_sorted (see timsort_inner proof).
+      #|  CONCLUDE: all_runs_sorted(arr, runs) holds after iteration.
       #|
-      #|Why runs_cover_prefix holds:
-      #|  - New run starts at old `start` and has length `end - start`
-      #|  - After push: runs now cover arr[0..end]
-      #|  - After inner loop: still cover arr[0..end] (merging preserves coverage)
-      #|  - After start = end: runs_cover_prefix(runs, start) holds
+      #|[INVARIANT: runs_cover_prefix(runs, start)]
+      #|  GIVEN: Before iteration, runs_cover_prefix(runs, start_old) holds.
+      #|  GIVEN: start_old == end_old (from invariant).
+      #|  STEP: New run starts at start_old with len = end_new - start_old.
+      #|  DEDUCE: After push, runs cover [0, end_new).
+      #|  STEP: Inner loop preserves coverage (see timsort_inner proof).
+      #|  STEP: start := end_new.
+      #|  CONCLUDE: runs_cover_prefix(runs, start) holds after iteration.
       #|
-      #|Why timsort_stack_invariant holds:
-      #|  - After pushing a new run, the invariant may be temporarily violated
-      #|  - The inner loop repeatedly merges runs until collapse returns None
-      #|  - collapse returns None only when:
-      #|    (1) runs[n-2].len > runs[n-1].len, AND
-      #|    (2) runs[n-3].len > runs[n-2].len + runs[n-1].len (if n >= 3), AND
-      #|    (3) runs[n-4].len > runs[n-3].len + runs[n-2].len (if n >= 4)
-      #|  - These conditions ensure the full timsort stack invariant is restored
+      #|[INVARIANT: timsort_stack_invariant(runs)]
+      #|  GIVEN: Inner loop exits only when timsort_stack_invariant holds.
+      #|  CONCLUDE: timsort_stack_invariant(runs) holds after iteration.
       #|
-      #|Termination: end strictly increases each iteration (find_streak returns >= 1
-      #|for non-empty remaining array), and loop exits when end >= len.
+      #|[TERMINATION]
+      #|  MEASURE: len - end
+      #|  GIVEN: find_streak returns streak_end >= 1 when arr[start..] is non-empty.
+      #|  STEP: end increases by at least 1 each iteration.
+      #|  DEDUCE: len - end decreases each iteration.
+      #|  DEDUCE: Loop exits when end >= len.
+      #|  CONCLUDE: Loop terminates.
       #|
-      #|Postcondition: When loop exits, start == end >= len, so runs cover arr[0..len].
-      #|The collapse function's final condition (runs[n-1].start + runs[n-1].len == len)
-      #|ensures all runs are merged into one, leaving the entire array sorted.
+      #|[POSTCONDITION]
+      #|  GIVEN: Loop exits with end >= len.
+      #|  GIVEN: runs_cover_prefix(runs, start) AND start == end >= len.
+      #|  DEDUCE: runs cover arr[0..len].
+      #|  GIVEN: all_runs_sorted(arr, runs).
+      #|  GIVEN: Final collapse merges all runs when runs[n-1].start + runs[n-1].len == len.
+      #|  DEDUCE: Eventually single run covers [0, len) and is sorted.
+      #|  CONCLUDE: arr is sorted.
       ,
   }
 }
@@ -234,19 +271,79 @@ fn[T : Compare] MutArrayView::insertion_sort(arr : MutArrayView[T]) -> Unit {
     } where {
       invariant: j >= 0 && j <= i,
       invariant: is_sorted_slice(arr.slice(j, i + 1)),
-      reasoning: #|The inner loop moves the element originally at position i
-        #|leftward until it reaches its sorted position.
-        #|After each swap, arr[j..i+1] remains sorted because we only
-        #|swap when arr[j] < arr[j-1], placing the smaller element left.
+      reasoning: #|[LOOP_ID: insertion_sort_inner]
+        #|
+        #|[INVARIANT: j >= 0 && j <= i]
+        #|  GIVEN: Initial j = i, so j <= i holds.
+        #|  GIVEN: Loop condition requires j > 0 to continue.
+        #|  STEP: j decreases by 1 each iteration.
+        #|  DEDUCE: j >= 0 always (loop exits when j <= 0).
+        #|  CONCLUDE: j >= 0 && j <= i holds.
+        #|
+        #|[INVARIANT: is_sorted_slice(arr.slice(j, i + 1))]
+        #|  GIVEN: Initially j = i, so slice has length 1, trivially sorted.
+        #|  GIVEN: Loop continues only if arr[j] < arr[j-1].
+        #|  STEP: swap(j, j-1) exchanges arr[j] and arr[j-1].
+        #|  LET: Before swap, arr[j] < arr[j-1] AND arr[j..i+1] sorted.
+        #|  DEDUCE: After swap, arr[j-1] < arr[j] (swapped values).
+        #|  DEDUCE: arr[j-1] was arr[j], which was < all of arr[j+1..i+1].
+        #|  DEDUCE: arr[j-1..i+1] is sorted after swap.
+        #|  STEP: j decreases to j-1, so new slice is arr[j-1..i+1].
+        #|  CONCLUDE: is_sorted_slice(arr.slice(j, i + 1)) holds.
+        #|
+        #|[TERMINATION]
+        #|  MEASURE: j
+        #|  STEP: j decreases by 1 each iteration.
+        #|  GIVEN: Loop exits when j <= 0 OR arr[j] >= arr[j-1].
+        #|  CONCLUDE: Loop terminates.
         ,
     }
   } where {
     invariant: i >= 1 && i <= len,
     invariant: is_sorted_slice(arr.slice(0, i)),
-    reasoning: #|At the start of each iteration, the prefix arr[0..i] is sorted.
-      #|The inner loop inserts arr[i] into its correct position within
-      #|this sorted prefix, maintaining sortedness of arr[0..i+1].
-      #|When i reaches len, the entire array is sorted.
+    reasoning: #|[LOOP_ID: insertion_sort_outer]
+      #|
+      #|[INVARIANT: i >= 1 && i <= len]
+      #|  GIVEN: Initial i = 1, so i >= 1 holds.
+      #|  GIVEN: Loop condition requires i < len to continue.
+      #|  STEP: i increases by 1 each iteration.
+      #|  CONCLUDE: i >= 1 && i <= len holds.
+      #|
+      #|[INVARIANT: is_sorted_slice(arr.slice(0, i))]
+      #|  [BASE CASE]
+      #|    GIVEN: Initial i = 1.
+      #|    DEDUCE: arr[0..1] has length 1, trivially sorted.
+      #|    CONCLUDE: is_sorted_slice(arr.slice(0, 1)) holds.
+      #|
+      #|  [INDUCTIVE CASE]
+      #|    GIVEN: Before iteration, is_sorted_slice(arr.slice(0, i)) holds.
+      #|    GOAL: Show is_sorted_slice(arr.slice(0, i + 1)) after iteration.
+      #|
+      #|    STEP: Inner loop terminates with j = j_final where:
+      #|      CASE j_final == 0: arr[0] is the minimum of arr[0..i+1].
+      #|      CASE arr[j_final] >= arr[j_final - 1]: arr[j_final] in correct position.
+      #|
+      #|    GIVEN: Inner loop maintains is_sorted_slice(arr.slice(j, i + 1)).
+      #|    DEDUCE: On inner loop exit, arr[j_final..i+1] is sorted.
+      #|
+      #|    GIVEN: Inner loop only swaps within arr[0..i+1], preserving order in arr[0..j_final].
+      #|    GIVEN: Original arr[0..i] was sorted (outer invariant).
+      #|    DEDUCE: arr[0..j_final] remains sorted (elements shifted right by swaps).
+      #|
+      #|    GIVEN: Exit condition implies arr[j_final - 1] <= arr[j_final] (if j_final > 0).
+      #|    DEDUCE: arr[0..j_final] and arr[j_final..i+1] connect correctly.
+      #|    CONCLUDE: is_sorted_slice(arr.slice(0, i + 1)) holds.
+      #|
+      #|[TERMINATION]
+      #|  MEASURE: len - i
+      #|  STEP: i increases by 1 each iteration.
+      #|  DEDUCE: len - i decreases each iteration.
+      #|  CONCLUDE: Loop terminates when i >= len.
+      #|
+      #|[POSTCONDITION]
+      #|  GIVEN: Loop exits with i == len.
+      #|  GIVEN: is_sorted_slice(arr.slice(0, i)) holds.
+      #|  CONCLUDE: is_sorted_slice(arr.slice(0, len)) holds, i.e., arr is sorted.
       ,
   }
 }
